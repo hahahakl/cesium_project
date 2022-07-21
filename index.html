@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script type="text/javascript" src="./Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="./Cesium/Widgets/widgets.css">
+    <style>
+        /* @import url('./Cesium/Widgets/widgets.css'); */
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #cesiumContainer {
+            height: 70vh;
+            width: 70vw;
+        }
+
+        /* 隐藏cesium的图标及版权信息 */
+        /* .cesium-widget-credits {
+            display: none !important;
+            visibility: hidden !important;
+        } */
+    </style>
+</head>
+
+<body>
+    <div id="cesiumContainer"></div>
+    <!-- 隐藏cesium的图标及版权信息 -->
+    <div id="creditContainer" style="display: none;"></div>
+    <script>
+        var token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI5YmFiMDIwYS1hMzMxLTRlMGQtODliOS02YTA0Y2ZmMjU4OGMiLCJpZCI6OTg4NjIsImlhdCI6MTY1NjA1NDQ1NH0.x0WimzSrTRTrET77ATcUrFdVqlYDETShVUtcCCbP1w8';
+        Cesium.Ion.defaultAccessToken = token;
+        ///////////////自定义数据源/////////////////
+        //高德影像
+        var gaodemap = new Cesium.UrlTemplateImageryProvider({
+            url:"http://webst02.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}"
+        })
+        //高德矢量
+        var gaodevc = new Cesium.UrlTemplateImageryProvider({
+            url:"http://webst02.is.autonavi.com/appmaptile?style=7&x={x}&y={y}&z={z}"
+        })
+        //ArcGisMap
+        var esriMap = new Cesium.ArcGisMapServerImageryProvider({
+            url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer',
+            enablePickFeatures: false
+        });
+        //createOpenStreetMapImageryProvider 
+        var osmMap = new Cesium.OpenStreetMapImageryProvider({
+            url : 'https://a.tile.openstreetmap.org/'
+        });
+        
+        //天地图影像
+        var tdtImagerLayerProvider = new Cesium.WebMapTileServiceImageryProvider({
+            url: "http://{s}.tianditu.com/img_w/wmts?service=wmts&request=GetTile&version=1.0.0&LAYER=img&tileMatrixSet=w&TileMatrix={TileMatrix}&TileRow={TileRow}&TileCol={TileCol}&style=default&format=tiles&tk=837264f46e683ec982d452e78d71052e",
+            layer: "tiandituImg",
+            style: "default",
+            format: "image/jpeg",
+            tileMatrixSetID: "tiandituImg",
+            show: true,
+            maximumLevel: 18,
+            subdomains:["t0","t1","t2","t3","t4","t5","t6","t7"]
+        });
+        //天地图注记
+        var tdtNoteLayerProvider = new Cesium.WebMapTileServiceImageryProvider({
+            url: "http://t0.tianditu.gov.cn/cia_w/wmts?service=wmts&request=GetTile&version=1.0.0&LAYER=cia&tileMatrixSet=w&TileMatrix={TileMatrix}&TileRow={TileRow}&TileCol={TileCol}&style=default&format=tiles&tk=837264f46e683ec982d452e78d71052e",
+            layer: "tiandituImgMarker",
+            style: "default",
+            format: "image/jpeg",
+            tileMatrixSetID: "tiandituImgMarker",
+            show: true,
+            maximumLevel: 16
+        });
+        ////////////设置ProviderViewModel///////////////
+        var providerViewModels=[];
+        var gaodemapModels=new Cesium.ProviderViewModel({
+            name:'高德影像',
+            iconUrl: Cesium.buildModuleUrl('./Widgets/Images/ImageryProviders/mapboxSatellite.png'),
+            tooltip:'来源高德',
+            creationFunction: function () {
+                return gaodemap;
+            }
+        });
+        providerViewModels.push(gaodemapModels);
+
+        var gaodevcModels=new Cesium.ProviderViewModel({
+            name:'高德矢量',
+            iconUrl: Cesium.buildModuleUrl('./Widgets/Images/ImageryProviders/mapboxStreets.png'),
+            tooltip:'来源高德',
+            creationFunction: function () {
+                return gaodevc;
+            }
+        });
+        providerViewModels.push(gaodevcModels);
+
+        var esriMapModels=new Cesium.ProviderViewModel({
+            name:'Arcgi影像',
+            iconUrl: Cesium.buildModuleUrl('./Widgets/Images/ImageryProviders/mapboxSatellite.png'),
+            tooltip:'来源esri',
+            creationFunction: function () {
+                return esriMap;
+            }
+        });
+        providerViewModels.push(esriMapModels);
+
+        var osmMapModels=new Cesium.ProviderViewModel({
+            name:'OSM影像',
+            iconUrl: Cesium.buildModuleUrl('./Widgets/Images/ImageryProviders/mapboxSatellite.png'),
+            tooltip:'openstreetmap 地图服务',
+            creationFunction: function () {
+                return osmMap;
+            }
+        });
+        providerViewModels.push(osmMapModels);
+
+        var tdtImagerLayerProviderModels=new Cesium.ProviderViewModel({
+            name:'天地图影像',
+            iconUrl: Cesium.buildModuleUrl('./Widgets/Images/ImageryProviders/mapboxSatellite.png'),
+            tooltip:'来源天地图',
+            creationFunction: function () {
+                return tdtImagerLayerProvider;
+            }
+        });
+        providerViewModels.push(tdtImagerLayerProviderModels);
+
+        var tdtNoteLayerProviderModels=new Cesium.ProviderViewModel({
+            name:'天地图标注',
+            iconUrl: Cesium.buildModuleUrl('./Widgets/Images/ImageryProviders/mapboxStreets.png'),
+            tooltip:'来源天地图',
+            creationFunction: function () {
+                return tdtNoteLayerProvider;
+            }
+        });
+        providerViewModels.push(tdtNoteLayerProviderModels);
+
+
+
+        const viewer = new Cesium.Viewer("cesiumContainer", {
+            contextOptions: {
+                webgl: {
+                    alpha: true
+                }
+            },
+            imageryProviderViewModels: providerViewModels,//自定义扩展
+            creditContainer: "creditContainer",
+            animation: false,//6
+            timeline: false,//8
+            geocoder: false,//1
+            homeButton: true,//2
+            sceneModePicker: true,//3
+            baseLayerPicker: true,//4
+            navigationHelpButton: false,//5
+            fullscreenButton: true,//9
+            infoBox: false,//信息框
+            navigationInstructionsInitiallyVisible: false,
+            selectionIndicator: false,//是否选取指示器组件
+            vrButton: false,//VR模式
+
+        });
+        Cesium.Camera.DEFAULT_VIEW_RECTANGLE =
+            Cesium.Rectangle.fromDegrees(100.0, 30.54, 109.4, 34.56);//Rectangle(west, south, east, north)
+        
+
+       </script>
+</body>
+
+</html>
